@@ -4,8 +4,8 @@
         Ukkonen E. On-line construction of suffix trees[J]. Algorithmica, 1995, 14(3): 249-260.
         https://www.cs.helsinki.fi/u/ukkonen/SuffixT1withFigs.pdf
         [Notice]
-            In this paper, the template use 1-based indexing.
-            However, to be pythonic, here we use 0-based indexing.
+            1. In this paper, the template use 1-based indexing. However, to be pythonic, here we use 0-based indexing.
+            2. Variable names follow the definition in the paper.
     Visualization:
         This code utilizes graphviz to visualize constructed tree and matching process.
     Author:
@@ -36,7 +36,7 @@ class SuffixTree(object):
             s[self.t[k_]] = (k_, k_ + p - k, r)
             return (False, r)
         else:
-            return (t in s or id(s) == id(self.falsum), s)
+            return (t in s or s is self.falsum, s)
 
     def _canonize(self, s, (k, p)):
         if p == k: return (s, k)
@@ -53,11 +53,11 @@ class SuffixTree(object):
         end_point, r = self._test_and_split(s, (k, i - 1), self.t[i - 1])
         while not end_point:
             r[self.t[i - 1]] = (i - 1, self.OO, {})
-            if id(oldr) != id(self.root): oldr['suffix'] = r
+            if oldr is self.root: oldr['suffix'] = r
             oldr = r
             s, k = self._canonize(s['suffix'], (k, i - 1))
             end_point, r = self._test_and_split(s, (k, i - 1), self.t[i - 1])
-        if id(oldr) != id(self.root): oldr['suffix'] = s
+        if oldr is self.root: oldr['suffix'] = s
         return (s, k)
 
     def append(self, template):
@@ -99,10 +99,9 @@ class SuffixTree(object):
             tree.node(str(id(curnode)), "")
         for i in curnode:
             if i == 'suffix':
-                if id(curnode['suffix']) != id(self.falsum):
+                if curnode['suffix'] is not self.falsum:
                     tree.edge(str(id(curnode)), str(id(curnode['suffix'])), style="dashed")
             else:
-                # tree.edge(str(id(curnode)), str(id(curnode[i][2])), label=str(curnode[i][:2]))
                 tree.edge(str(id(curnode)), str(id(curnode[i][2])), label=self.t.__getslice__(*curnode[i][:2]))
                 self._traverse(tree, curnode[i][2], labeldict)
 

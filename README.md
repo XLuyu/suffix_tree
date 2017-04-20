@@ -6,6 +6,14 @@ https://www.cs.helsinki.fi/u/ukkonen/SuffixT1withFigs.pdf
 
 *Notice: In this paper, the template use 1-based indexing. But here I use 0-based indexing.*
 
+# Usage
+```Python
+    st = SuffixTree() # create an empty suffix tree
+    st.append('AAATGATCATCAACC') # feed the tree a string to construct
+    st.append('ACAACAGCCAGG') # feed more if you like
+    print st.match_pattern_suffix('CATCAACCACAACAGCCAGGTTGTAGGCGA')
+```
+
 # Visualization (Optional)
 This code utilizes graphviz to visualize constructed tree and matching process.
 1. Install [graphviz](http://www.graphviz.org/Download..php) and make sure it is in PATH  

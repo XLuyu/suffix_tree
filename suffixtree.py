@@ -22,6 +22,7 @@ class SuffixTree(object):
         self.OO = max_template_length
         self.t = ''  # template
         self.tlen = 0  # template length
+        self.start_idx = 0
         self.root = {}
         self.falsum = collections.defaultdict(lambda: (-1, 0, self.root))
         self.root['suffix'] = self.falsum
@@ -52,10 +53,11 @@ class SuffixTree(object):
         oldr = self.root
         end_point, r = self._test_and_split(s, (k, i - 1), self.t[i - 1])
         while not end_point:
-            r[self.t[i - 1]] = (i - 1, self.OO, {})
+            r[self.t[i - 1]] = (i - 1, self.OO, {'idx': self.start_idx})
             if oldr is not self.root: oldr['suffix'] = r
             oldr = r
             s, k = self._canonize(s['suffix'], (k, i - 1))
+            self.start_idx += 1
             end_point, r = self._test_and_split(s, (k, i - 1), self.t[i - 1])
         if oldr is not self.root: oldr['suffix'] = s
         return (s, k)
@@ -96,12 +98,12 @@ class SuffixTree(object):
         if labeldict and str(id(curnode)) in labeldict:
             tree.node(str(id(curnode)), label=labeldict[str(id(curnode))], style='filled', fillcolor='red')
         else:
-            tree.node(str(id(curnode)), "")
+            tree.node(str(id(curnode)), label=str(curnode['idx']) if 'idx' in curnode else '')
         for i in curnode:
             if i == 'suffix':
                 if curnode['suffix'] is not self.falsum:
                     tree.edge(str(id(curnode)), str(id(curnode['suffix'])), style="dashed")
-            else:
+            elif i != 'idx':
                 tree.edge(str(id(curnode)), str(id(curnode[i][2])), label=self.t.__getslice__(*curnode[i][:2]))
                 self._traverse(tree, curnode[i][2], labeldict)
 
@@ -117,5 +119,5 @@ class SuffixTree(object):
 
 if __name__ == '__main__':
     st = SuffixTree()
-    st.append('AAATGATCATCAACCACAACAGCCAGG')
+    st.append('AAATGATCATCAACCACAACAGCCAGG$')
     print st.match_pattern_suffix('CATCAACCACAACAGCCAGGTTGTAGGCGA', True)

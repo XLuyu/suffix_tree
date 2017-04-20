@@ -53,11 +53,11 @@ class SuffixTree(object):
         end_point, r = self._test_and_split(s, (k, i - 1), self.t[i - 1])
         while not end_point:
             r[self.t[i - 1]] = (i - 1, self.OO, {})
-            if oldr is self.root: oldr['suffix'] = r
+            if oldr is not self.root: oldr['suffix'] = r
             oldr = r
             s, k = self._canonize(s['suffix'], (k, i - 1))
             end_point, r = self._test_and_split(s, (k, i - 1), self.t[i - 1])
-        if oldr is self.root: oldr['suffix'] = s
+        if oldr is not self.root: oldr['suffix'] = s
         return (s, k)
 
     def append(self, template):
@@ -118,4 +118,4 @@ class SuffixTree(object):
 if __name__ == '__main__':
     st = SuffixTree()
     st.append('AAATGATCATCAACCACAACAGCCAGG')
-    print st.match_pattern_suffix('CATCAACCACAACAGCCAGGTTGTAGGCGA')
+    print st.match_pattern_suffix('CATCAACCACAACAGCCAGGTTGTAGGCGA', True)

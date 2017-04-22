@@ -53,7 +53,7 @@ class SuffixTree(object):
         oldr = self.root
         end_point, r = self._test_and_split(s, (k, i - 1), self.t[i - 1])
         while not end_point:
-            r[self.t[i - 1]] = (i - 1, self.OO, {'idx': self.start_idx})
+            r[self.t[i - 1]] = (i - 1, self.OO, {'idx': (self.tid, self.start_idx)})
             if oldr is not self.root: oldr['suffix'] = r
             oldr = r
             s, k = self._canonize(s['suffix'], (k, i - 1))
@@ -62,12 +62,17 @@ class SuffixTree(object):
         if oldr is not self.root: oldr['suffix'] = s
         return (s, k)
 
-    def append(self, template):
+    def append(self, template, tid="untitle", new=False):
         """ Feed a string to the suffix tree. It will continue the construction based on the existing tree
             Initially, there is only a root in the tree, this method can be invoked more than once.
+            tid is used to name the new appended part
+            if new is False, the tree will grows based on last active point. Otherwise, start at root.
         """
+        self.tid = tid
+        self.start_idx = 0
         self.t += template
         oldlen, self.tlen = self.tlen, len(self.t)
+        if new: self.s, self.k = (self.root, oldlen)
         for i in range(oldlen, self.tlen):
             self.s, self.k = self._update(self.s, (self.k, i + 1))
             self.s, self.k = self._canonize(self.s, (self.k, i + 1))
@@ -75,15 +80,24 @@ class SuffixTree(object):
     def match_pattern_suffix(self, pattern, visual=False):
         """ match a pattern on the suffix tree.
             if visual is true, it will generate .png files for each index in pattern
-            return value is the longest suffix of pattern matched to the template
+            return value is a list of the unique matched parts of pattern, each element is a pair
+            ((tid,index in this tid), (start of pattern, end of pattern))
         """
+        ret = []
         s, k, p = self.root, 0, 0
+        pstart_idx = 0
         for idx, i in enumerate(pattern):
+            reported_match = False
             while k < p or s is not self.root:
                 if k == p and i in s: break
                 if k < p and s[pattern[k]][0] + p - k < self.tlen and self.t[s[pattern[k]][0] + p - k] == i: break
                 if s is not self.root:
+                    if not reported_match:
+                        if k == p and 'idx' in s: ret += [(s['idx'], (pstart_idx, p))]
+                        if k < p and 'idx' in s[pattern[k]][2]: ret += [(s[pattern[k]][2]['idx'], (pstart_idx, p))]
+                        reported_match = True
                     s = s['suffix']
+                    pstart_idx += 1
                     while k < p and s[pattern[k]][1] - s[pattern[k]][0] <= p - k:
                         s, k = s[pattern[k]][2], k + s[pattern[k]][1] - s[pattern[k]][0]
                 else: k += 1
@@ -92,7 +106,9 @@ class SuffixTree(object):
                 while k < p and s[pattern[k]][1] - s[pattern[k]][0] <= p - k:
                     s, k = s[pattern[k]][2], k + s[pattern[k]][1] - s[pattern[k]][0]
             if visual: self.plot_tree("pattern" + str(idx), False, {str(id(s)): pattern[k:p]})
-        return pattern[k:p]
+        if k == p and 'idx' in s: ret += [(s['idx'], (pstart_idx, p))]
+        if k < p and 'idx' in s[pattern[k]][2]: ret += [(s[pattern[k]][2]['idx'], (pstart_idx, p))]
+        return ret
 
     def _traverse(self, tree, curnode, labeldict):
         if labeldict and str(id(curnode)) in labeldict:
@@ -119,5 +135,5 @@ class SuffixTree(object):
 
 if __name__ == '__main__':
     st = SuffixTree()
-    st.append('AAATGATCATCAACCACAACAGCCAGG$')
+    st.append('AAATGATCATCAACCACAACAGCCAGG')
     print st.match_pattern_suffix('CATCAACCACAACAGCCAGGTTGTAGGCGA', True)

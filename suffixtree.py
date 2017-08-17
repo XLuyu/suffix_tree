@@ -13,6 +13,8 @@
     Date:
         2017-04-18
 """
+""" pending minor error: handle query character which is not in template
+"""
 import collections
 
 
@@ -32,21 +34,18 @@ class SuffixTree(object):
         if k < p:
             k_, p_, s_ = s[self.t[k]]
             if t == self.t[k_ + p - k]: return (True, s)
-            r = {}
-            r[self.t[k_ + p - k]] = (k_ + p - k, p_, s_)
+            r = {self.t[k_ + p - k]: (k_ + p - k, p_, s_)}
             s[self.t[k_]] = (k_, k_ + p - k, r)
             return (False, r)
         else:
             return (t in s or s is self.falsum, s)
 
     def _canonize(self, s, (k, p)):
-        if p == k: return (s, k)
-        k_, p_, s_ = s[self.t[k]]
-        while p_ - k_ <= p - k:
+        while k < p:
+            k_, p_, s_ = s[self.t[k]]
+            if p_ - k_ > p - k: break
             k += p_ - k_
             s = s_
-            if k == p: break
-            k_, p_, s_ = s[self.t[k]]
         return (s, k)
 
     def _update(self, s, (k, i)):
@@ -97,10 +96,11 @@ class SuffixTree(object):
                         if k < p and 'idx' in s[pattern[k]][2]: ret += [(s[pattern[k]][2]['idx'], (pstart_idx, p))]
                         reported_match = True
                     s = s['suffix']
-                    pstart_idx += 1
                     while k < p and s[pattern[k]][1] - s[pattern[k]][0] <= p - k:
                         s, k = s[pattern[k]][2], k + s[pattern[k]][1] - s[pattern[k]][0]
-                else: k += 1
+                else:
+                    k += 1
+                pstart_idx += 1
             if k == p and i in s or k < p and s[pattern[k]][0] + p - k < self.tlen and self.t[s[pattern[k]][0] + p - k] == i:
                 p += 1
                 while k < p and s[pattern[k]][1] - s[pattern[k]][0] <= p - k:
@@ -134,6 +134,13 @@ class SuffixTree(object):
 
 
 if __name__ == '__main__':
+    template = 'CAGTAAATAAAATAAAAGATAAGAATAAAAAAAATCATTGATATAAATTCAGTTAATATTTGTAGTGATGATAAAAATATAAAATTGAGAGTTAATAATA'
+    query = 'TTAAGTAAGGGAAAGATCATAAGACCATATCTGAAAAATCTAAATCCACTCCAACTTGCCGCTGATTGCATTGAAACAGTAAATAAAATAAAAGATAAGAATAAAAAAAATCATTGATATAAATTCAGTTAATATTTGTAGTGATGAAAAAAGAGAG'
     st = SuffixTree()
-    st.append('AAATGATCATCAACCACAACAGCCAGG')
-    print st.match_pattern_suffix('CATCAACCACAACAGCCAGGTTGTAGGCGA', True)
+    st.append(template)
+    st.plot_tree()
+    result = st.match_pattern_suffix(query, True)
+    for s1, s2, t in map(lambda x: (x[0][1], x[1][0], x[1][1] - x[1][0]), result):
+        print s1, s2, t
+        print template[s1:s1 + t]
+        print query[s2:s2 + t]
